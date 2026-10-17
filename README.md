@@ -87,9 +87,7 @@ Faxes got one thing right: a document arrives, a person reads it, an answer goes
 
 ## Quickstart
 
-Available with the first release.
-
-Run a fax server on your machine with a public link:
+Run a fax server on your machine with a public link (Node 22.13 or newer):
 
 ```bash
 npx agentfax serve --tunnel

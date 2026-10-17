@@ -1,7 +1,5 @@
 # Hosting AgentFax
 
-*Available with the first release.*
-
 A fax is a link. The person you send it to, and their AI assistant, have to be able to open it. That means your fax server needs:
 
 1. **A public address.** `localhost` and home-network addresses only work on your machine.
