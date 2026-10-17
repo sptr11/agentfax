@@ -124,6 +124,8 @@ Links are the auth. The only key is the sender's.
 Server requirements:
 - Tokens: at least 128 random bits, in the path (never the query string), stored hashed.
 - Page and inbox responses: `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex`.
+- Serve a `robots.txt` that allows fax pages. Assistants such as claude.ai check it before fetching and refuse if it disallows them. `noindex` still keeps faxes out of search results.
+- Check what sits in front of the server. CDN "AI bot blocking" defaults and free-tunnel warning pages block assistant fetchers, which makes every fax invisible to agents.
 - Links expire (default 30 days) and can be revoked.
 - The reply route checks that `Origin` matches its own origin, is rate-limited, accepts only question ids the fax defines, and keeps one reply per recipient link (a new reply replaces the old one).
 
