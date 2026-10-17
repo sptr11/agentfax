@@ -89,21 +89,22 @@ Faxes got one thing right: a document arrives, a person reads it, an answer goes
 
 Available with the first release.
 
-Run a fax server, with SQLite and nothing else to set up:
+Run a fax server on your machine with a public link:
 
 ```bash
-npx agentfax serve
+npx agentfax serve --tunnel
+# → Fax server running at https://3f9a2c.lhr.life
 ```
 
 Send a fax:
 
 ```bash
 npx agentfax send report.html --to priya --ask "Approve the Q3 numbers?"
-# → http://localhost:8787/f/k3J9xQ   send this to Priya
-# → http://localhost:8787/i/Zp81wL   your inbox, keep it private
+# → https://3f9a2c.lhr.life/f/k3J9xQ   send this to Priya
+# → https://3f9a2c.lhr.life/i/Zp81wL   your inbox, keep it private
 ```
 
-Or add it to a Hono app:
+Or add it to a Hono app you already run:
 
 ```ts
 import { Hono } from 'hono'
@@ -113,6 +114,8 @@ import { sqliteStore } from 'agentfax/sqlite'
 const app = new Hono()
 app.route('/', agentfax({ store: sqliteStore('fax.db') }))
 ```
+
+Your own server, your own domain, and what to avoid: [docs/HOSTING.md](docs/HOSTING.md).
 
 ## The spec
 
