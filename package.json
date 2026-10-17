@@ -24,7 +24,7 @@
     "node": ">=22.13"
   },
   "bin": {
-    "agentfax": "./dist/bin.js"
+    "agentfax": "dist/bin.js"
   },
   "exports": {
     ".": {
