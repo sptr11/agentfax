@@ -59,6 +59,11 @@ app.route('/', agentfax({ store: sqliteStore('fax.db') }))
 
 Set `AGENTFAX_PUBLIC_URL` to your app's public address, for example `https://yourapp.com`.
 
+Two things to check when you embed it:
+
+- **Mount it at the root.** Fax pages use paths like `/f/…` and `/i/…`, so mounting under a sub-path breaks them.
+- **Your app's `robots.txt` wins.** If your app already serves one, or a catch-all route answers first, AgentFax's doesn't load. Make sure yours doesn't disallow AI assistants, or their agents get "this site blocks automated access."
+
 ### A server or Node host
 
 Any machine that runs Node 22 or newer works: a VPS, a home server, Fly.io, Render or Railway. AgentFax stores everything in one SQLite file, so give it a disk that survives restarts.

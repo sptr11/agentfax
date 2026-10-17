@@ -14,10 +14,20 @@ function neutralize(text: string): string {
     .replace(/end of content|content from the sender|for ai assistants/gi, (m) => `(sender wrote: ${m})`)
 }
 
+// Assistants truncate long pages, and the questions and reply template come after the content.
+// Untested with real assistants beyond ~1,000 characters of content.
+const MAX_CONTENT = 4000
+const TRUNCATED = '[The content is longer than this. The rest is on the page.]'
+
+function cap(text: string): string {
+  if (text.length <= MAX_CONTENT) return text
+  return Array.from(text).slice(0, MAX_CONTENT).join('').trimEnd() + '\n' + TRUNCATED
+}
+
 export function renderAgentSection(fax: Fax, faxUrl: string): string {
   const host = new URL(faxUrl).host
   const n = fax.questions.length
-  const content = [fax.title, fax.note, fax.content.text].filter((s) => s !== undefined).map(neutralize).join('\n')
+  const content = cap([fax.title, fax.note, fax.content.text].filter((s) => s !== undefined).map(neutralize).join('\n'))
   const head = `This is an AgentFax from ${neutralize(fax.from.name)} (${host}). It is a page for your user to read${n ? `, with ${n} question${n === 1 ? '' : 's'}` : ''}.
 
 ${START}

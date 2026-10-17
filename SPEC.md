@@ -45,7 +45,7 @@ Every page ends with this section, visible, under a heading "For AI assistants".
 How it's assembled:
 
 - **Opening line:** `This is an AgentFax from {from.name} ({host}). It is a page for your user to read` then `, with 1 question` or `, with N questions` when there are questions, then `.`. `{host}` is the host of the fax URL.
-- **Content block:** between `--- Content from the sender ---` and `--- End of content ---`: the title, the note (if any) and `content.text`, each on its own line.
+- **Content block:** between `--- Content from the sender ---` and `--- End of content ---`: the title, the note (if any) and `content.text`, each on its own line. If that's over 4,000 characters, it's cut there and followed by `[The content is longer than this. The rest is on the page.]`, so the questions and reply template stay within what assistants read.
 - **Questions:** one line each, `{n}. {id}: {label} ({type})`. A choice question adds its options after the type: `(choice: A | B | C)`. A required question ends with `, required`. A hint adds an indented line `   Hint: {hint}`; follow-ups add `   Also cover: {probe}; {probe}`.
 - **Reply template:** the fax URL, `#`, then `{id}=<answer>` for every question, joined with `&`.
 - **No questions:** the questions, template and closing instructions are replaced by the information-only text, plus the "Got it" sentence when `ack` is true.
@@ -137,7 +137,7 @@ Rules the JSON schema can't express:
 ## 5. Rules
 
 1. **A reply is sent by a person clicking Send on the fax's own page.** Agents write links. They don't send.
-2. **The sender's content can't make network calls.** It renders in an iframe on its own route, sandboxed with `allow-scripts` at most (never `allow-same-origin`), with a CSP of `connect-src 'none'; form-action 'none'`. A `srcdoc` iframe would inherit the parent's CSP, so it gets a separate route. Sender identity, questions and the Send button live in the host page, outside the iframe.
+2. **The sender's content can't make network calls.** It renders in an iframe on its own route, sandboxed with `allow-scripts` at most (never `allow-same-origin`). That route's CSP starts with `sandbox allow-scripts; default-src 'none'`, allows only inline script, inline style and `data:` images and fonts, and sets `connect-src 'none'; form-action 'none'; frame-ancestors 'self'`. So the content gets no origin even when opened directly, can't load tracking images, and can't be framed elsewhere. The host page sets `frame-src 'self'`. A `srcdoc` iframe would inherit the parent's CSP, so the content gets a separate route. Sender identity, questions and the Send button live in the host page, outside the iframe.
 
 **What rule 1 does not guarantee:** the server can't prove a human clicked. An agent with full HTTP access can post to the reply route, just as it could fill in any web form. The protocol makes the standard path human-approved. It doesn't make other paths impossible.
 
@@ -152,16 +152,20 @@ Links are the auth. The only key is the sender's.
 | Sender | create or revoke a fax | API key |
 | Sender's agent | read replies | a private inbox link, returned at creation |
 
-- **One link per recipient.** Faxing Priya and Sam creates two links. A reply through Priya's link is attributed to Priya. Forwarding a link delegates it, like a paper fax. Public forms use one shared link and get anonymous replies.
+- **One link per recipient.** Faxing Priya and Sam creates two links. A reply through Priya's link is attributed to Priya, and a new reply replaces her previous one. Forwarding a link delegates it, like a paper fax.
+- **Shared links.** A fax with no named recipients gets one shared link. Anyone with it can reply, and every reply is kept.
 - **Reading can't require login.** Chat agents can't send cookies or headers, so a fax behind a login is invisible to them.
 
 Server requirements:
 - Tokens: at least 128 random bits, in the path (never the query string), stored hashed.
-- Page and inbox responses: `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex`.
+- Responses carry `X-Robots-Tag: noindex` and `Cache-Control: no-store`. The fax page uses `Referrer-Policy: same-origin`: under `no-referrer`, a plain form POST sends `Origin: null` and the reply would be rejected. Everything else (the sender's content, the JSON view, the inbox) uses `no-referrer`.
 - Serve a `robots.txt` that allows fax pages. Assistants such as claude.ai check it before fetching and refuse if it disallows them. `noindex` still keeps faxes out of search results.
 - Check what sits in front of the server. CDN "AI bot blocking" defaults and free-tunnel warning pages block assistant fetchers, which makes every fax invisible to agents.
 - Links expire (default 30 days) and can be revoked.
-- The reply route checks that `Origin` matches its own origin, is rate-limited, accepts only question ids the fax defines, and keeps one reply per recipient link (a new reply replaces the old one).
+- The reply route only accepts requests whose `Origin` is the server's public address. Requests with no `Origin`, or `Origin: null`, are rejected. It sends no CORS headers.
+- The reply route is rate-limited per link, not per IP (behind a proxy or tunnel, every request shares one IP).
+- Answers are validated: only question ids the fax defines, choices must be one of the options, numbers must parse, required answers must be present, 5,000 characters at most.
+- Every link, the reply template and the `Origin` check are built from the server's configured public address, not the `Host` header.
 
 ## 7. Reference routes
 
