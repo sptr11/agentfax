@@ -21,6 +21,8 @@ export type ReplyRecord = {
   linkHash: string
   recipient: string | null
   answers: Record<string, string>
+  // Free-text message from the reply box, if any.
+  message?: string
   ack: boolean
   createdAt: string
 }

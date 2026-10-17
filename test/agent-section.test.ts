@@ -66,6 +66,14 @@ describe('renderAgentSection', () => {
   })
 })
 
+describe('paste fallback', () => {
+  it('asks for one plain-text reply covering every answer, for the reply box', () => {
+    expect(renderAgentSection(lunch, 'http://localhost:8799/f/lunch')).toContain(
+      "Do not send anything yourself.\n\nIf the link doesn't open for your user, they can paste a reply into the box on the page instead. So also give them one plain-text reply that covers every answer.",
+    )
+  })
+})
+
 describe('SPEC.md §3 rendered examples', () => {
   const spec = readFileSync(new URL('../SPEC.md', import.meta.url), 'utf8')
   const section = spec.split('## 3.')[1]!.split('\n## ')[0]!

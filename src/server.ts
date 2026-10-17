@@ -4,7 +4,8 @@ import { z } from 'zod'
 import { renderAgentSection } from './agent-section.js'
 import { QuestionSchema, type Fax } from './fax.js'
 import { htmlToText } from './html-to-text.js'
-import { faxPage, inboxPage, messagePage } from './page.js'
+import { CLIENT_JS } from './client.js'
+import { faxPage, inboxPage, problemPage, receiptPage, stamp } from './page.js'
 import type { FaxRecord, Store } from './store.js'
 import { hashToken, newToken } from './token.js'
 
@@ -46,10 +47,13 @@ const CreateFax = z
     if (new Set(ids).size !== ids.length) ctx.addIssue({ code: 'custom', path: ['questions'], message: 'question ids must be unique' })
   })
 
-const ReplyBody = z.object({ answers: z.record(z.string(), z.unknown()).default({}), ack: z.boolean().optional() })
+const ReplyBody = z.object({ answers: z.record(z.string(), z.unknown()).default({}), message: z.string().optional(), ack: z.boolean().optional() })
 
 // Sender content runs here. Opaque origin even when opened directly, no network, no forms, only framed by us.
 const VIEW_CSP = "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; media-src data:; connect-src 'none'; form-action 'none'; frame-ancestors 'self'; base-uri 'none'"
+// Appended to sender HTML in the view. Reports content height to the fax page, which sizes the frame.
+// postMessage isn't a network call, so connect-src 'none' still holds.
+const RESIZE = `<script>(function(){var last=0;function send(){var b=document.body;if(!b)return;var r=document.createRange();r.selectNodeContents(b);var cs=getComputedStyle(b);var h=Math.ceil(r.getBoundingClientRect().bottom+window.scrollY+parseFloat(cs.paddingBottom)+parseFloat(cs.marginBottom));if(Math.abs(h-last)<2)return;last=h;parent.postMessage({ type: 'agentfax:height', height: h }, '*')}addEventListener('load',send);if(window.ResizeObserver)new ResizeObserver(send).observe(document.body||document.documentElement);send()})()</script>`
 const PAGE_CSP = "default-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
 const PRIVATE = { 'cache-control': 'no-store', 'x-robots-tag': 'noindex', 'referrer-policy': 'no-referrer' }
 // The fax page can't use no-referrer: a plain form POST would then carry Origin: null, which the reply route rejects.
@@ -83,7 +87,14 @@ export function agentfax(opts: AgentfaxOptions) {
   const base = (c: Context) => (opts.publicUrl ?? new URL(c.req.url).origin).replace(/\/+$/, '')
   const wantsJson = (c: Context, suffix: boolean) => suffix || (c.req.header('accept') ?? '').includes('application/json')
   const fail = (c: Context, json: boolean, status: 401 | 403 | 404 | 409 | 410 | 422 | 429, error: string, message: string, issues?: unknown) =>
-    json ? c.json({ error, message, ...(issues ? { issues } : {}) }, status) : c.html(messagePage(message, message), status)
+    json ? c.json({ error, message, ...(issues ? { issues } : {}) }, status) : c.html(problemPage(message, message), status, PRIVATE)
+
+  const gone = (c: Context, json: boolean, fax: FaxRecord) => {
+    const { from, title } = fax.data
+    if (json) return c.json({ error: 'gone', message: fax.revokedAt ? 'The sender withdrew this fax.' : 'This fax has expired.' }, 410)
+    const [heading, when] = fax.revokedAt ? ['This fax was withdrawn', 'was withdrawn'] : ['This fax has expired', `was available until ${stamp(fax.expiresAt).split(' ').slice(0, 3).join(' ')}`]
+    return c.html(problemPage(heading, `${from}’s fax “${title}” ${when}. Ask ${from} to send it again if you still need it.`), 410, PRIVATE)
+  }
 
   const isLive = (fax: FaxRecord) => !fax.revokedAt && new Date(fax.expiresAt) > now()
 
@@ -112,6 +123,7 @@ export function agentfax(opts: AgentfaxOptions) {
   const app = new Hono()
 
   app.get('/robots.txt', (c) => c.text('User-agent: *\nAllow: /\n'))
+  app.get('/assets/fax.js', (c) => c.body(CLIENT_JS, 200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'public, max-age=3600' }))
 
   app.post('/api/faxes', async (c) => {
     const senderId = await authorize(c.req.raw)
@@ -148,7 +160,7 @@ export function agentfax(opts: AgentfaxOptions) {
   app.get('/f/:token/view', async (c) => {
     const found = await resolve(c.req.param('token'))
     if (!found || !isLive(found.fax) || !found.fax.data.html) return c.text('Not found', 404)
-    return c.body(found.fax.data.html, 200, { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': VIEW_CSP, ...PRIVATE })
+    return c.body(found.fax.data.html + RESIZE, 200, { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': VIEW_CSP, ...PRIVATE })
   })
 
   app.get('/f/:token', async (c) => {
@@ -156,12 +168,12 @@ export function agentfax(opts: AgentfaxOptions) {
     const json = wantsJson(c, suffix)
     const found = await resolve(token)
     if (!found) return fail(c, json, 404, 'not_found', 'No fax here. Check the link.')
-    if (!isLive(found.fax)) return fail(c, json, 410, 'gone', found.fax.revokedAt ? 'The sender withdrew this fax.' : 'This fax has expired.')
+    if (!isLive(found.fax)) return gone(c, json, found.fax)
     const b = base(c)
     const url = `${b}/f/${token}`
     const fax = toFax(found.fax, url, b, found.link.recipient)
     if (json) return c.json(fax, 200, { ...PRIVATE, 'access-control-allow-origin': '*' })
-    return c.html(faxPage(fax, `/f/${token}`, renderAgentSection(fax, url), Boolean(found.fax.data.html)), 200, PAGE_HEADERS)
+    return c.html(faxPage(fax, `/f/${token}`, url, renderAgentSection(fax, url), Boolean(found.fax.data.html), found.fax.createdAt), 200, PAGE_HEADERS)
   })
 
   app.post(
@@ -174,9 +186,8 @@ export function agentfax(opts: AgentfaxOptions) {
     if (!found) return fail(c, json, 404, 'not_found', 'No fax here. Check the link.')
     if (c.req.header('origin') !== new URL(base(c)).origin) return fail(c, json, 403, 'wrong_origin', 'Replies are sent from the fax page.')
     const { fax, link } = found
-    if (!isLive(fax)) return fail(c, json, 410, 'gone', fax.revokedAt ? 'The sender withdrew this fax.' : 'This fax has expired.')
+    if (!isLive(fax)) return gone(c, json, fax)
     const { questions, ack: takesAck } = fax.data
-    if (!questions.length && !takesAck) return fail(c, json, 409, 'no_replies', "This fax doesn't take replies.")
 
     // Every attempt counts, valid or not, so invalid spam isn't free.
     const t = now().getTime()
@@ -192,8 +203,8 @@ export function agentfax(opts: AgentfaxOptions) {
       body = parsed.data
     } else {
       const form = await c.req.parseBody()
-      const { ack, ...answers } = form
-      body = { answers, ack: ack !== undefined }
+      const { ack, message, ...answers } = form
+      body = { answers, ...(typeof message === 'string' ? { message } : {}), ack: ack !== undefined }
     }
 
     const issues: string[] = []
@@ -210,15 +221,28 @@ export function agentfax(opts: AgentfaxOptions) {
       else if (q.type === 'number' && !Number.isFinite(Number(v))) issues.push(`${id}: must be a number`)
       else answers[id] = v
     }
-    for (const q of questions) if (q.required && !answers[q.id] && !issues.some((i) => i.startsWith(`${q.id}:`))) issues.push(`${q.id}: required`)
-    if (!questions.length && !body.ack) issues.push('ack: required')
-    if (issues.length) return fail(c, json, 422, 'invalid_reply', 'Some answers need fixing.', issues)
+    const message = (body.message ?? '').trim()
+    // A message in the reply box stands in for the answers, so required questions only apply without one.
+    if (!message) for (const q of questions) if (q.required && !answers[q.id] && !issues.some((i) => i.startsWith(`${q.id}:`))) issues.push(`${q.id}: required`)
+    if (message.length > MAX_ANSWER) issues.push(`message: over ${MAX_ANSWER} characters`)
+    const acked = Boolean(body.ack && takesAck)
+    if (!questions.length && !acked && !message) {
+      if (!takesAck) return fail(c, json, 409, 'no_replies', 'Write a message to send.')
+      issues.push('ack or message: required')
+    }
+    if (issues.length) {
+      if (json) return fail(c, json, 422, 'invalid_reply', 'Some answers need fixing.', issues)
+      return c.html(problemPage('Some answers need fixing', 'Nothing was sent. Go back, fix these, and send again.', { href: `/f/${token}`, label: '← Back to the fax' }, issues), 422, PRIVATE)
+    }
 
     await store.saveReply(
-      { id: `rp_${newToken(16)}`, faxId: fax.id, linkHash: link.tokenHash, recipient: link.recipient, answers, ack: Boolean(body.ack && takesAck), createdAt: now().toISOString() },
+      { id: `rp_${newToken(16)}`, faxId: fax.id, linkHash: link.tokenHash, recipient: link.recipient, answers, ...(message ? { message } : {}), ack: acked, createdAt: now().toISOString() },
       link.recipient ? 'replace' : 'append',
     )
-    return json ? c.json({ ok: true }, 201) : c.html(messagePage('Sent', `Sent to ${fax.data.from}.`), 201)
+    if (json) return c.json({ ok: true }, 201)
+    const b = base(c)
+    const view = toFax(fax, `${b}/f/${token}`, b, link.recipient)
+    return c.html(receiptPage(view, fax.createdAt, answers, message, acked, now().toISOString()), 201, PRIVATE)
     },
   )
 
@@ -228,7 +252,7 @@ export function agentfax(opts: AgentfaxOptions) {
     const found = TOKEN.test(token) ? await store.findInbox(await hashToken(token)) : null
     if (!found) return fail(c, json, 404, 'not_found', 'No inbox here. Check the link.')
     if (json) {
-      const replies = found.replies.map((r) => ({ to: r.recipient, answers: r.answers, ack: r.ack, at: r.createdAt }))
+      const replies = found.replies.map((r) => ({ to: r.recipient, answers: r.answers, ...(r.message ? { message: r.message } : {}), ack: r.ack, at: r.createdAt }))
       return c.json({ title: found.fax.data.title, replies }, 200, PRIVATE)
     }
     return c.html(inboxPage(found.fax.data.title, found.replies), 200, PRIVATE)

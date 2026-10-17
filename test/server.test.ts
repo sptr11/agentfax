@@ -172,6 +172,12 @@ describe('GET /f/:token/view', () => {
     expect(csp).not.toContain('allow-same-origin')
   })
 
+  it('adds a height reporter so the page can size the frame', async () => {
+    const { req, send, path } = setup()
+    const html = await (await req(`${path((await send()).links[0]!.url)}/view`)).text()
+    expect(html).toContain("parent.postMessage({ type: 'agentfax:height'")
+  })
+
   it('returns 404 when the fax has no HTML', async () => {
     const { req, send, path } = setup()
     const { links } = await send({ ...lunch, html: undefined, text: 'Friday 12:30' })
@@ -240,6 +246,32 @@ describe('POST /f/:token/reply', () => {
     const { links, inbox } = await (await create({ from: 'Facilities', title: 'Office move', text: 'Monday, 4th floor.', ack: true, to: ['Sam'] })).json()
     expect((await reply(links[0].url, { ack: true })).status).toBe(201)
     expect((await (await req(`${path(inbox)}.json`)).json()).replies[0]).toMatchObject({ to: 'Sam', ack: true, answers: {} })
+  })
+
+  it('stores a free-text message alongside the answers', async () => {
+    const { req, create, reply, path } = setup()
+    const { links, inbox } = await (await create({ ...lunch, to: ['Priya'] })).json()
+    expect((await reply(links[0].url, { answers: { spot: 'Ramen' }, message: 'Is the broth vegetarian?' })).status).toBe(201)
+    expect((await (await req(`${path(inbox)}.json`)).json()).replies[0]).toMatchObject({ answers: { spot: 'Ramen' }, message: 'Is the broth vegetarian?' })
+  })
+
+  it('accepts a message on its own, even on an information-only fax without ack', async () => {
+    const { req, create, reply, path } = setup()
+    const { links, inbox } = await (await create({ from: 'Facilities', title: 'Office move', text: 'Monday.', to: ['Sam'] })).json()
+    expect((await reply(links[0].url, { message: 'Which lockers are ours?' })).status).toBe(201)
+    expect((await (await req(`${path(inbox)}.json`)).json()).replies[0]).toMatchObject({ to: 'Sam', message: 'Which lockers are ours?', ack: false })
+  })
+
+  it('accepts a message instead of the required answers', async () => {
+    const { req, send, reply, path } = setup()
+    const { links, inbox } = await send()
+    expect((await reply(links[0]!.url, { message: 'Ramen please, I am vegetarian.' })).status).toBe(201)
+    expect((await (await req(`${path(inbox)}.json`)).json()).replies[0]).toMatchObject({ answers: {}, message: 'Ramen please, I am vegetarian.' })
+  })
+
+  it('rejects a message over 5,000 characters', async () => {
+    const { send, reply } = setup()
+    expect((await reply((await send()).links[0]!.url, { answers: { spot: 'Tacos' }, message: 'x'.repeat(5001) })).status).toBe(422)
   })
 
   it('refuses replies to an information-only fax without ack', async () => {
@@ -328,6 +360,80 @@ describe('DELETE /api/faxes/:id', () => {
     const { req, send } = setup()
     const { id } = await send()
     expect((await req(`/api/faxes/${id}`, { method: 'DELETE' })).status).toBe(401)
+  })
+})
+
+describe('fax page design', () => {
+  const html = async (body: object = lunch) => {
+    const { req, create, path } = setup()
+    const { links } = await (await create(body)).json()
+    return (await req(path(links[0].url))).text()
+  }
+
+  it('shows a transmission header with sender, recipient and sent time', async () => {
+    const page = await html({ ...lunch, to: ['Priya'] })
+    expect(page).toContain('From <b>Ops team</b>')
+    expect(page).toContain('To <b>Priya</b>')
+    expect(page).toContain('17 OCT 2026 12:00 UTC')
+  })
+
+  it('shows the origin as the sender identity', async () => {
+    expect(await html()).toContain('<span class="origin">fax.example.com</span>')
+  })
+
+  it('shows the hint and follow-ups under their question', async () => {
+    const page = await html({ ...lunch, questions: [{ id: 'note', label: 'Anything?', type: 'longtext', hint: 'Allergies first.', probes: ['When?', 'Diet?'] }] })
+    expect(page).toContain('<p class="hint">Allergies first.</p>')
+    expect(page).toContain('<ul class="cover"><li>When?</li><li>Diet?</li></ul>')
+  })
+
+  it('loads the prefill script from the same origin', async () => {
+    const { req } = setup()
+    expect(await html()).toContain('<script src="/assets/fax.js" defer></script>')
+    const res = await req('/assets/fax.js')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toContain('javascript')
+    expect(await res.text()).toContain('location.hash')
+  })
+
+  it('shows Got it and a message box, but no questions, on an information-only fax with ack', async () => {
+    const page = await html({ from: 'Facilities', title: 'Office move', text: 'Monday.', ack: true })
+    expect(page).toContain('>Got it</button>')
+    expect(page).toContain('name="message"')
+    expect(page).not.toContain('class="chips"')
+  })
+
+  it('leaves required checks to the server, so the message box can stand in for answers', async () => {
+    expect(await html()).not.toMatch(/<(input|textarea)[^>]* required/)
+  })
+
+  it('gives every fax a message box', async () => {
+    expect(await html()).toContain('<label class="label" for="q-message">Or type or paste your reply here')
+    expect(await html({ from: 'Facilities', title: 'Office move', text: 'Monday.' })).toContain('name="message"')
+  })
+
+  it('shows a transmission report after a form reply from a browser', async () => {
+    const { req, create, path } = setup()
+    const { links } = await (await create({ ...lunch, to: ['Priya'] })).json()
+    const res = await req(`${path(links[0].url)}/reply`, {
+      method: 'POST',
+      headers: { origin: PUBLIC, accept: 'text/html', 'content-type': 'application/x-www-form-urlencoded' },
+      body: 'spot=Ramen&note=Vegetarian',
+    })
+    expect(res.status).toBe(201)
+    const page = await res.text()
+    expect(page).toContain('TRANSMISSION REPORT')
+    expect(page).toContain('SENT TO OPS TEAM')
+    expect(page).toContain('<dd>Ramen</dd>')
+  })
+
+  it('explains an expired fax in plain words', async () => {
+    const { req, send, path, advance } = setup()
+    const { links } = await send()
+    advance(31)
+    const page = await (await req(path(links[0]!.url))).text()
+    expect(page).toContain('This fax has expired')
+    expect(page).toContain('Ask Ops team to send it again')
   })
 })
 

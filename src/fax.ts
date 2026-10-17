@@ -1,7 +1,8 @@
 import { z } from 'zod'
 
 // Question ids go straight into the reply fragment (#id=value), so they must never need encoding.
-const QuestionId = z.string().regex(/^[a-z][a-z0-9_]{0,39}$/, 'lowercase letters, digits and _, starting with a letter, max 40')
+// `message` and `ack` are reserved: every reply can carry a free-text message, and ack is the read confirmation.
+const QuestionId = z.string().regex(/^(?!(message|ack)$)[a-z][a-z0-9_]{0,39}$/, 'lowercase letters, digits and _, starting with a letter, max 40; not message or ack')
 
 const base = {
   id: QuestionId,

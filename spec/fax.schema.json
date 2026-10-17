@@ -64,7 +64,7 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^[a-z][a-z0-9_]{0,39}$"
+                "pattern": "^(?!(message|ack)$)[a-z][a-z0-9_]{0,39}$"
               },
               "label": {
                 "type": "string",
@@ -110,7 +110,7 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^[a-z][a-z0-9_]{0,39}$"
+                "pattern": "^(?!(message|ack)$)[a-z][a-z0-9_]{0,39}$"
               },
               "label": {
                 "type": "string",

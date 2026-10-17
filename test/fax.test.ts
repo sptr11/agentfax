@@ -53,6 +53,10 @@ describe('FaxSchema', () => {
     expect(FaxSchema.safeParse(withQuestions([{ id, label: 'Q', type: 'text' }])).success).toBe(false)
   })
 
+  it.each(['message', 'ack'])('rejects the reserved question id %j', (id) => {
+    expect(FaxSchema.safeParse(withQuestions([{ id, label: 'Q', type: 'text' }])).success).toBe(false)
+  })
+
   it('rejects duplicate question ids', () => {
     const q = { id: 'email', label: 'Email', type: 'text' }
     expect(FaxSchema.safeParse(withQuestions([q, q])).success).toBe(false)

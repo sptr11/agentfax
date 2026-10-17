@@ -50,3 +50,4 @@ describe('buildReplyLink', () => {
     expect(buildReplyLink('http://x.example/f/a', lunch.questions, { spot: 'Tacos' })).toBe('http://x.example/f/a#spot=Tacos')
   })
 })
+

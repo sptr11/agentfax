@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS replies (
   link_hash TEXT NOT NULL,
   recipient TEXT,
   answers TEXT NOT NULL,
+  message TEXT,
   ack INTEGER NOT NULL,
   created_at TEXT NOT NULL
 );
@@ -44,6 +45,8 @@ export function sqliteStore(path: string): Store {
   const db = new DatabaseSync(path)
   db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;')
   db.exec(SCHEMA)
+  // Databases created before replies had a message column.
+  if (!(db.prepare('PRAGMA table_info(replies)').all() as { name: string }[]).some((c) => c.name === 'message')) db.exec('ALTER TABLE replies ADD COLUMN message TEXT')
 
   const insertFax = db.prepare('INSERT INTO faxes (id, sender_id, data, inbox_hash, created_at, expires_at, revoked_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
   const insertLink = db.prepare('INSERT INTO links (token_hash, fax_id, recipient) VALUES (?, ?, ?)')
@@ -51,7 +54,7 @@ export function sqliteStore(path: string): Store {
   const faxByInbox = db.prepare('SELECT * FROM faxes WHERE inbox_hash = ?')
   const repliesByFax = db.prepare('SELECT * FROM replies WHERE fax_id = ? ORDER BY seq')
   const deleteRepliesForLink = db.prepare('DELETE FROM replies WHERE link_hash = ?')
-  const insertReply = db.prepare('INSERT INTO replies (id, fax_id, link_hash, recipient, answers, ack, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+  const insertReply = db.prepare('INSERT INTO replies (id, fax_id, link_hash, recipient, answers, message, ack, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
   const revokeFax = db.prepare('UPDATE faxes SET revoked_at = ? WHERE id = ? AND sender_id = ?')
 
   const tx = (fn: () => void) => {
@@ -79,13 +82,14 @@ export function sqliteStore(path: string): Store {
     async findInbox(inboxHash) {
       const f = faxByInbox.get(inboxHash) as FaxRow | undefined
       if (!f) return null
-      const rows = repliesByFax.all(f.id) as { id: string; fax_id: string; link_hash: string; recipient: string | null; answers: string; ack: number; created_at: string }[]
+      const rows = repliesByFax.all(f.id) as { id: string; fax_id: string; link_hash: string; recipient: string | null; answers: string; message: string | null; ack: number; created_at: string }[]
       const replies: ReplyRecord[] = rows.map((r) => ({
         id: r.id,
         faxId: r.fax_id,
         linkHash: r.link_hash,
         recipient: r.recipient,
         answers: JSON.parse(r.answers),
+        ...(r.message ? { message: r.message } : {}),
         ack: r.ack === 1,
         createdAt: r.created_at,
       }))
@@ -94,7 +98,7 @@ export function sqliteStore(path: string): Store {
     async saveReply(reply, mode) {
       tx(() => {
         if (mode === 'replace') deleteRepliesForLink.run(reply.linkHash)
-        insertReply.run(reply.id, reply.faxId, reply.linkHash, reply.recipient, JSON.stringify(reply.answers), reply.ack ? 1 : 0, reply.createdAt)
+        insertReply.run(reply.id, reply.faxId, reply.linkHash, reply.recipient, JSON.stringify(reply.answers), reply.message ?? null, reply.ack ? 1 : 0, reply.createdAt)
       })
     },
     async revoke(faxId, senderId, at) {
