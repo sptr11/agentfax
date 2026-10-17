@@ -13,7 +13,7 @@ export type AgentfaxOptions = {
   store: Store
   // Public address of this server, e.g. https://fax.example.com. Links and the reply Origin check use it.
   // Falls back to the request origin, which is wrong behind proxies and tunnels.
-  publicUrl?: string
+  publicUrl?: string | (() => string | undefined)
   // Default sender auth: `Authorization: Bearer <senderKey>`.
   senderKey?: string
   // Custom sender auth for apps that embed AgentFax. Return a sender id, or null to reject.
@@ -84,7 +84,8 @@ export function agentfax(opts: AgentfaxOptions) {
   const recent = new Map<string, number[]>()
   const limits = { personal: opts.repliesPerMinute?.personal ?? 10, shared: opts.repliesPerMinute?.shared ?? 60 }
 
-  const base = (c: Context) => (opts.publicUrl ?? new URL(c.req.url).origin).replace(/\/+$/, '')
+  const publicUrl = () => (typeof opts.publicUrl === 'function' ? opts.publicUrl() : opts.publicUrl)
+  const base = (c: Context) => (publicUrl() ?? new URL(c.req.url).origin).replace(/\/+$/, '')
   const wantsJson = (c: Context, suffix: boolean) => suffix || (c.req.header('accept') ?? '').includes('application/json')
   const fail = (c: Context, json: boolean, status: 401 | 403 | 404 | 409 | 410 | 422 | 429, error: string, message: string, issues?: unknown) =>
     json ? c.json({ error, message, ...(issues ? { issues } : {}) }, status) : c.html(problemPage(message, message), status, PRIVATE)

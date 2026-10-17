@@ -58,6 +58,15 @@ describe('POST /api/faxes', () => {
     expect((await send()).links).toEqual([{ to: null, url: expect.stringMatching(/\/f\//) }])
   })
 
+  it('reads the public URL fresh on each request when it is a function, for tunnels that move', async () => {
+    let current = 'https://one.example'
+    const app = agentfax({ store: memoryStore(), publicUrl: () => current, senderKey: KEY })
+    const make = async () => (await (await app.request('http://internal/api/faxes', { method: 'POST', headers: { authorization: `Bearer ${KEY}`, 'content-type': 'application/json' }, body: JSON.stringify(lunch) })).json()).links[0].url
+    expect(await make()).toMatch(/^https:\/\/one\.example\/f\//)
+    current = 'https://two.example'
+    expect(await make()).toMatch(/^https:\/\/two\.example\/f\//)
+  })
+
   it('uses the request origin when no public URL is configured', async () => {
     const { send } = setup({ publicUrl: null })
     expect((await send()).links[0]!.url.startsWith('http://internal:8787/f/')).toBe(true)

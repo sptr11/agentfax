@@ -3,31 +3,71 @@
   "version": "0.1.0-dev.0",
   "private": true,
   "description": "The fax machine, rebuilt for agents.",
+  "keywords": [
+    "agents",
+    "ai",
+    "handoff",
+    "protocol",
+    "mcp",
+    "llm"
+  ],
+  "homepage": "https://github.com/sptr11/agentfax#readme",
+  "bugs": {
+    "url": "https://github.com/sptr11/agentfax/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sptr11/agentfax.git"
+  },
+  "license": "MIT",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13"
   },
+  "bin": {
+    "agentfax": "./dist/bin.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./hono": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./sqlite": {
+      "types": "./dist/sqlite.d.ts",
+      "default": "./dist/sqlite.js"
+    },
+    "./schema.json": "./spec/fax.schema.json"
+  },
+  "files": [
+    "dist",
+    "spec",
+    "SPEC.md",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "schema": "tsx scripts/emit-schema.ts"
+    "schema": "tsx scripts/emit-schema.ts",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && chmod +x dist/bin.js",
+    "e2e": "playwright test",
+    "prepack": "npm run build"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.5",
     "hono": "^4.13.13",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@hono/node-server": "^2.1.5",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
     "ajv": "^8.20.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sptr11/agentfax.git"
   }
 }
