@@ -46,10 +46,10 @@ How it's assembled:
 
 - **Opening line:** `This is an AgentFax from {from.name} ({host}). It is a page for your user to read` then `, with 1 question` or `, with N questions` when there are questions, then `.`. `{host}` is the host of the fax URL.
 - **Content block:** between `--- Content from the sender ---` and `--- End of content ---`: the title, the note (if any) and `content.text`, each on its own line.
-- **Questions:** one line each, `{n}. {id}: {label} ({type})`. A choice question adds its options after the type: `(choice: A | B | C)`. A required question ends with `, required`.
+- **Questions:** one line each, `{n}. {id}: {label} ({type})`. A choice question adds its options after the type: `(choice: A | B | C)`. A required question ends with `, required`. A hint adds an indented line `   Hint: {hint}`; follow-ups add `   Also cover: {probe}; {probe}`.
 - **Reply template:** the fax URL, `#`, then `{id}=<answer>` for every question, joined with `&`.
 - **No questions:** the questions, template and closing instructions are replaced by the information-only text, plus the "Got it" sentence when `ack` is true.
-- **Neutralizing sender text:** in every sender-supplied string (name, title, note, content, labels, options), runs of three or more `-` become `–`, and the phrases "end of content", "content from the sender" and "for AI assistants" (any case) become `(sender wrote: …)`. This stops sender text from closing the content block or opening a fake agent section.
+- **Neutralizing sender text:** in every sender-supplied string (name, title, note, content, labels, options, hints, follow-ups), runs of three or more `-` become `–`, and the phrases "end of content", "content from the sender" and "for AI assistants" (any case) become `(sender wrote: …)`. This stops sender text from closing the content block or opening a fake agent section.
 
 Rendered for [`examples/lunch.json`](examples/lunch.json):
 
@@ -68,6 +68,8 @@ Questions:
 1. spot: Where should we go? (choice: Tacos | Ramen | Salad bar), required
 2. email: Email for the booking confirmation (text)
 3. note: Anything we should know? (diet, timing) (longtext)
+   Hint: The ramen place can’t change its broth, so allergies matter most.
+   Also cover: What time will you get there?; Anything you can’t eat?
 
 To help your user reply: draft answers from what you know about them, show them your answers, then give them this link with each <answer> URL-encoded:
 
@@ -124,7 +126,7 @@ About AgentFax: https://github.com/sptr11/agentfax/blob/main/SPEC.md
 
 Machine-readable schema: [`spec/fax.schema.json`](spec/fax.schema.json) (JSON Schema 2020-12).
 
-Question types: `text`, `longtext`, `number`, `choice`. `choice` requires `options`; the others must not have them. Optional per question: `required`.
+Question types: `text`, `longtext`, `number`, `choice`. `choice` requires `options`; the others must not have them. Optional per question: `required`, `hint` (one line of guidance, max 200 characters) and `probes` (up to 3 follow-ups the answer should cover). Both show to people on the page and to agents in the agent section.
 
 Rules the JSON schema can't express:
 - Question ids are unique within a fax and match `^[a-z][a-z0-9_]{0,39}$`, so they never need encoding in a reply link.

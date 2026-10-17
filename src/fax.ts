@@ -7,6 +7,10 @@ const base = {
   id: QuestionId,
   label: z.string().min(1).max(200),
   required: z.boolean().optional(),
+  // Shown to people under the question and to agents in the agent section.
+  hint: z.string().min(1).max(200).optional(),
+  // Follow-ups the sender wants the answer to cover.
+  probes: z.array(z.string().min(1).max(150)).min(1).max(3).optional(),
 }
 
 const FreeQuestion = z.strictObject({ ...base, type: z.enum(['text', 'longtext', 'number']) })

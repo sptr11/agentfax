@@ -31,7 +31,15 @@ ${END}
 About AgentFax: ${fax.about}`
   }
   const qs = fax.questions
-    .map((q, i) => `${i + 1}. ${q.id}: ${neutralize(q.label)} (${q.type}${'options' in q ? ': ' + q.options.map(neutralize).join(' | ') : ''})${q.required ? ', required' : ''}`)
+    .map((q, i) =>
+      [
+        `${i + 1}. ${q.id}: ${neutralize(q.label)} (${q.type}${'options' in q ? ': ' + q.options.map(neutralize).join(' | ') : ''})${q.required ? ', required' : ''}`,
+        q.hint && `   Hint: ${neutralize(q.hint)}`,
+        q.probes && `   Also cover: ${q.probes.map(neutralize).join('; ')}`,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    )
     .join('\n')
   const template = faxUrl + '#' + fax.questions.map((q) => `${q.id}=<answer>`).join('&')
   return head + `Questions:

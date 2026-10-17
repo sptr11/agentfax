@@ -74,6 +74,21 @@
               "required": {
                 "type": "boolean"
               },
+              "hint": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "probes": {
+                "minItems": 1,
+                "maxItems": 3,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 150
+                }
+              },
               "type": {
                 "type": "string",
                 "enum": [
@@ -104,6 +119,21 @@
               },
               "required": {
                 "type": "boolean"
+              },
+              "hint": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "probes": {
+                "minItems": 1,
+                "maxItems": 3,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 150
+                }
               },
               "type": {
                 "type": "string",

@@ -30,8 +30,19 @@ describe('FaxSchema', () => {
     expect(FaxSchema.safeParse(withQuestions([{ id: 'days', label: 'Days', type: 'multichoice', options: ['mon'] }])).success).toBe(false)
   })
 
-  it.each(['hint', 'probes'])('rejects %s, which 0.1 does not render', (field) => {
-    expect(FaxSchema.safeParse(withQuestions([{ id: 'note', label: 'Note', type: 'text', [field]: field === 'probes' ? ['x'] : 'x' }])).success).toBe(false)
+  it('accepts a hint and follow-ups on a question', () => {
+    const q = { id: 'note', label: 'Note', type: 'longtext', hint: 'Allergies first.', probes: ['When will you arrive?', 'Anything you cannot eat?'] }
+    expect(FaxSchema.safeParse(withQuestions([q])).success).toBe(true)
+  })
+
+  it('rejects more than 3 follow-ups on a question', () => {
+    const q = { id: 'note', label: 'Note', type: 'longtext', probes: ['a', 'b', 'c', 'd'] }
+    expect(FaxSchema.safeParse(withQuestions([q])).success).toBe(false)
+  })
+
+  it('rejects a hint over 200 characters', () => {
+    const q = { id: 'note', label: 'Note', type: 'longtext', hint: 'x'.repeat(201) }
+    expect(FaxSchema.safeParse(withQuestions([q])).success).toBe(false)
   })
 
   it('rejects options on a text question', () => {
