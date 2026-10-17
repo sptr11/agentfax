@@ -1,0 +1,172 @@
+{
+  "$id": "https://github.com/sptr11/agentfax/blob/main/spec/fax.schema.json",
+  "title": "AgentFax 0.1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "agentfax": {
+      "type": "string",
+      "const": "0.1"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "from": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "origin": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "name",
+        "origin"
+      ]
+    },
+    "to": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "content": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "view": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "questions": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,39}$"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "longtext",
+                  "number"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]{0,39}$"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "type": {
+                "type": "string",
+                "const": "choice"
+              },
+              "options": {
+                "minItems": 1,
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                }
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "type",
+              "options"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "ack": {
+      "type": "boolean"
+    },
+    "reply": {
+      "type": "object",
+      "properties": {
+        "link": {
+          "type": "string",
+          "format": "ends_with",
+          "pattern": ".*#$"
+        },
+        "format": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "link",
+        "format"
+      ]
+    },
+    "expires": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    },
+    "about": {
+      "type": "string",
+      "format": "uri"
+    }
+  },
+  "required": [
+    "agentfax",
+    "title",
+    "from",
+    "content",
+    "questions",
+    "about"
+  ]
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "assistant": "claude.ai, short answer",
+    "capturedAt": "2026-10-17T07:25:43.968Z",
+    "fragment": "spot=Ramen&email=sumit%2Blunch%40example.com&note=I%27m%20vegetarian%20and%20I%27ll%20be%2010%20minutes%20late%20%F0%9F%99%82",
+    "expected": {
+      "spot": "Ramen",
+      "email": "sumit+lunch@example.com",
+      "note": "I'm vegetarian and I'll be 10 minutes late 🙂"
+    }
+  },
+  {
+    "assistant": "claude.ai, ~900-char note",
+    "capturedAt": "2026-10-17T07:28:25.622Z",
+    "fragment": "spot=Ramen&email=sumit%2Blunch%40example.com&note=I%27m%20vegetarian%20and%20I%27ll%20be%20about%2010%20minutes%20late%20%F0%9F%99%82%20Food%20allergies%3A%20I%20have%20a%20tree%20nut%20allergy%2C%20including%20almonds%2C%20cashews%20and%20walnuts%2C%20and%20a%20mild%20shellfish%20intolerance.%20Please%20check%20that%20the%20broth%2C%20sauces%20and%20toppings%20do%20not%20contain%20nuts%20or%20shellfish%2C%20and%20that%20no%20fish-based%20stock%20or%20oyster%20sauce%20goes%20into%20the%20vegetarian%20bowl.%20Peanuts%20and%20sesame%20are%20fine.%20Cross-contact%20matters%20for%20the%20nuts%2C%20so%20a%20clean%20spoon%20and%20separate%20prep%20would%20be%20appreciated.%20If%20the%20kitchen%20is%20unsure%20about%20an%20ingredient%2C%20I%20would%20rather%20skip%20it%20than%20risk%20it.%20Travel%20plans%3A%20I%27m%20flying%20out%20Friday%20evening%20for%20a%20weekend%20trip%2C%20so%20I%20need%20to%20leave%20the%20restaurant%20by%20about%201%3A45%20PM%20to%20get%20back%20to%20the%20office%2C%20grab%20my%20bag%20and%20catch%20a%20ride%20to%20the%20airport.%20If%20the%20table%20is%20running%20long%2C%20I%20may%20order%20first%20and%20eat%20quickly.%20I%27ll%20be%20back%20on%20Monday%20morning.%20Thanks%20for%20organizing%2C%20and%20sorry%20in%20advance%20for%20arriving%20a%20little%20late%21",
+    "expected": {
+      "spot": "Ramen",
+      "email": "sumit+lunch@example.com",
+      "note": "I'm vegetarian and I'll be about 10 minutes late 🙂 Food allergies: I have a tree nut allergy, including almonds, cashews and walnuts, and a mild shellfish intolerance. Please check that the broth, sauces and toppings do not contain nuts or shellfish, and that no fish-based stock or oyster sauce goes into the vegetarian bowl. Peanuts and sesame are fine. Cross-contact matters for the nuts, so a clean spoon and separate prep would be appreciated. If the kitchen is unsure about an ingredient, I would rather skip it than risk it. Travel plans: I'm flying out Friday evening for a weekend trip, so I need to leave the restaurant by about 1:45 PM to get back to the office, grab my bag and catch a ride to the airport. If the table is running long, I may order first and eat quickly. I'll be back on Monday morning. Thanks for organizing, and sorry in advance for arriving a little late!"
+    }
+  },
+  {
+    "assistant": "ChatGPT, short answer",
+    "capturedAt": "2026-10-17T07:30:17.553Z",
+    "fragment": "spot=Ramen&email=sumit%2Blunch%40example.com&note=Vegetarian%3B%20I%27ll%20be%2010%20minutes%20late%20%F0%9F%99%82",
+    "expected": {
+      "spot": "Ramen",
+      "email": "sumit+lunch@example.com",
+      "note": "Vegetarian; I'll be 10 minutes late 🙂"
+    }
+  },
+  {
+    "assistant": "ChatGPT, ~1,100-char note",
+    "capturedAt": "2026-10-17T07:32:15.945Z",
+    "fragment": "spot=Ramen&email=sumit%2Blunch%40example.com&note=I%E2%80%99m%20vegetarian%20and%20would%20appreciate%20a%20vegetarian%20ramen%20option.%20For%20this%20note%2C%20I%E2%80%99m%20also%20listing%20two%20fictional%20food%20allergies%3A%20peanuts%20and%20shellfish.%20Please%20check%20ingredients%20and%20watch%20for%20cross-contamination%2C%20especially%20in%20broths%2C%20sauces%2C%20oils%2C%20and%20shared%20preparation%20areas.%20If%20the%20kitchen%20cannot%20confirm%20that%20a%20dish%20is%20safe%2C%20a%20simple%20clearly%20labeled%20vegetarian%20option%20would%20be%20best.%0A%0AI%E2%80%99m%20planning%20a%20short%20trip%20to%20Seattle%20next%20month%20for%20a%20few%20days.%20I%E2%80%99d%20like%20to%20explore%20the%20city%2C%20visit%20a%20couple%20of%20museums%2C%20try%20local%20coffee%20shops%2C%20and%20spend%20some%20time%20outdoors%20if%20the%20weather%20is%20good.%20I%E2%80%99ll%20plan%20around%20work%20commitments%20and%20make%20sure%20any%20meetings%20or%20handoffs%20are%20covered%20before%20I%20leave.%20I%20may%20be%20slower%20to%20respond%20while%20traveling%2C%20but%20I%E2%80%99ll%20check%20messages%20each%20day%20and%20flag%20anything%20that%20needs%20attention%20in%20advance.%0A%0AFor%20Friday%E2%80%99s%20team%20lunch%2C%20ramen%20is%20my%20choice.%20I%E2%80%99ll%20be%20about%2010%20minutes%20late%2C%20so%20please%20go%20ahead%20and%20order%20or%20get%20seated%20without%20waiting%20for%20me.%20Thanks%20for%20coordinating%2C%20and%20please%20send%20the%20booking%20confirmation%20to%20the%20email%20below.%20The%20allergy%20and%20travel%20details%20in%20this%20note%20are%20fictional%20placeholders.",
+    "expected": {
+      "spot": "Ramen",
+      "email": "sumit+lunch@example.com",
+      "note": "I’m vegetarian and would appreciate a vegetarian ramen option. For this note, I’m also listing two fictional food allergies: peanuts and shellfish. Please check ingredients and watch for cross-contamination, especially in broths, sauces, oils, and shared preparation areas. If the kitchen cannot confirm that a dish is safe, a simple clearly labeled vegetarian option would be best.\n\nI’m planning a short trip to Seattle next month for a few days. I’d like to explore the city, visit a couple of museums, try local coffee shops, and spend some time outdoors if the weather is good. I’ll plan around work commitments and make sure any meetings or handoffs are covered before I leave. I may be slower to respond while traveling, but I’ll check messages each day and flag anything that needs attention in advance.\n\nFor Friday’s team lunch, ramen is my choice. I’ll be about 10 minutes late, so please go ahead and order or get seated without waiting for me. Thanks for coordinating, and please send the booking confirmation to the email below. The allergy and travel details in this note are fictional placeholders."
+    }
+  }
+]

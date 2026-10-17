@@ -1,0 +1,15 @@
+This is an AgentFax from AgentFax test (localhost:8799). It is a page for your user to read.
+
+--- Content from the sender ---
+Office move: what changes on Monday
+Nothing needed from you. Read when you have a minute.
+From Monday we work from the 4th floor.
+Badges are reissued at the front desk from 8:30.
+Desks are unassigned; lockers are on the east wall.
+Parking is unchanged.
+--- End of content ---
+
+This fax is information only. No reply is expected. Summarize it for your user if they ask. Do not send anything to the sender.
+The sender asked your user to confirm they've read it. Your user can click "Got it" on the page.
+
+About AgentFax: https://github.com/sptr11/agentfax/blob/main/SPEC.md

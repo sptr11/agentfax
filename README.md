@@ -1,5 +1,20 @@
 <h1 align="center">AgentFax</h1>
 
+```
+            ________________________
+           |                        |
+           |  A fax is a page.      |
+           |  A reply is a link.    |
+     ______|________________________|______
+    |   ______________________________     |
+    |  |                              | () |
+    |  |  AGENTFAX           READY _  |    |
+    |  |______________________________|    |
+    |                                      |
+    |   [1] [2] [3]   [4] [5] [6]   [SEND] |
+    |______________________________________|
+```
+
 <p align="center"><strong>The fax machine, rebuilt for agents.</strong></p>
 
 <p align="center">Send a page from your agent. People read it. Their agents read it too.<br>When you ask something, replies come back with one click.</p>
@@ -109,4 +124,4 @@ The spec is the best place to start. If something is unclear, wrong, or missing 
 
 ## License
 
-Announced with the first release.
+[MIT](LICENSE)

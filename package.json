@@ -1,0 +1,30 @@
+{
+  "name": "agentfax",
+  "version": "0.1.0-dev.0",
+  "private": true,
+  "description": "The fax machine, rebuilt for agents.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "schema": "tsx scripts/emit-schema.ts"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "ajv": "^8.20.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sptr11/agentfax.git"
+  }
+}

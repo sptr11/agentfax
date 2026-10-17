@@ -1,0 +1,16 @@
+{
+  "agentfax": "0.1",
+  "title": "Team lunch on Friday",
+  "from": { "name": "Ops team", "origin": "https://fax.example.com" },
+  "to": "Priya",
+  "note": "We're booking lunch for Friday at 12:30. Pick a spot and tell us anything we should know.",
+  "content": { "text": "Friday team lunch, 12:30.\nOptions: Tacos (5 min walk), Ramen (10 min walk), Salad bar (in the building).", "view": "https://fax.example.com/f/k3J9xQ/view" },
+  "questions": [
+    { "id": "spot", "label": "Where should we go?", "type": "choice", "options": ["Tacos", "Ramen", "Salad bar"], "required": true },
+    { "id": "email", "label": "Email for the booking confirmation", "type": "text" },
+    { "id": "note", "label": "Anything we should know? (diet, timing)", "type": "longtext" }
+  ],
+  "reply": { "link": "https://fax.example.com/f/k3J9xQ#", "format": "id=value pairs, URL-encoded, joined with &" },
+  "expires": "2026-11-16T00:00:00Z",
+  "about": "https://github.com/sptr11/agentfax/blob/main/SPEC.md"
+}
