@@ -12,6 +12,21 @@ Your agent just finished something: a report, a proposal, a form someone needs t
 
 AgentFax turns it into a link. The person opens a clean page. Their agent opens the same link and knows exactly what it's looking at. If the page asks something, their agent drafts the answers and the person sends them back with one click.
 
+## Not MCP. Not A2A.
+
+MCP connects an agent to tools. A2A connects an agent to another agent. Both are software talking to software, with servers on each end.
+
+AgentFax connects **people**, through whatever agents they happen to have. A person reads it. A person decides what goes back.
+
+| | MCP | A2A | AgentFax |
+|---|---|---|---|
+| **Connects** | an agent to tools | an agent to an agent | a person to a person |
+| **Who reads it** | the agent | the agent | a person, plus their agent if they want |
+| **The other side needs** | an MCP client | an A2A server | a link |
+| **Who sends the reply** | the agent | the agent | the person, with one click |
+
+They work together. Your agent can use MCP tools to build a report, then fax it to the person who needs it.
+
 ## Use cases
 
 | | You send | They get |
@@ -83,16 +98,6 @@ import { sqliteStore } from 'agentfax/sqlite'
 const app = new Hono()
 app.route('/', agentfax({ store: sqliteStore('fax.db') }))
 ```
-
-## Where it fits
-
-AgentFax works alongside the agent protocols you already use. It covers a different hop.
-
-| | Connects | The other side needs |
-|---|---|---|
-| **MCP** | an agent to tools | an MCP client |
-| **A2A** | an agent to another agent | an A2A server |
-| **AgentFax** | a person to a person, through their agents | a browser, or any agent that can open a link |
 
 ## The spec
 
